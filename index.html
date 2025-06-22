@@ -5,12 +5,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>TEXNET User Expiry Dashboard</title>
   <style>
-    body { font-family: Arial, sans-serif; margin: 20px; }
-    h2 { color: #444; }
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+    }
     input[type="text"] {
       width: 100%;
-      padding: 8px;
-      margin-bottom: 10px;
+      padding: 10px;
+      margin-bottom: 15px;
       font-size: 16px;
     }
     table {
@@ -20,78 +22,92 @@
     }
     th, td {
       padding: 10px;
-      border: 1px solid #ccc;
       text-align: left;
+      border-bottom: 1px solid #ccc;
     }
-    tr.red { background-color: #ffd6d6; }
-    tr.yellow { background-color: #fff7cc; }
-    tr.green { background-color: #d8ffd6; }
-    @media (max-width: 600px) {
-      table, thead, tbody, th, td, tr { display: block; }
-      th { background: #eee; }
-      td { margin-bottom: 10px; }
+    .expired {
+      background-color: #fdd;
+    }
+    .almost-expired {
+      background-color: #fff5cc;
+    }
+    .active {
+      background-color: #e0f9e0;
+    }
+    .status {
+      font-weight: bold;
     }
   </style>
 </head>
 <body>
-  <h2>TEXNET User Expiry Dashboard</h2>
-  <input type="text" id="search" placeholder="Search by name or phone..." onkeyup="filterTable()"/>
+  <h1>TEXNET User Expiry Dashboard</h1>
+  <input type="text" id="search" placeholder="Search by name or phone..."/>
+
   <table id="userTable">
     <thead>
-      <tr><th>Name</th><th>Phone</th><th>Expiry</th><th>Status</th></tr>
+      <tr>
+        <th>Name</th>
+        <th>Phone</th>
+        <th>Expiry</th>
+        <th>Status</th>
+      </tr>
     </thead>
-    <tbody id="tableBody">
-      <tr><td colspan="4">Loading data...</td></tr>
+    <tbody>
+      <!-- User rows go here -->
     </tbody>
   </table>
 
   <script>
-fetch('user-expiry.csv')
-  .then(response => response.text())
-  .then(csvText => {
-    const rows = csvText.trim().split('\n').slice(1); // Skip headers
-    const tableBody = document.getElementById('user-table-body');
-    const now = new Date();
+    async function loadCSV() {
+      const response = await fetch("user-expiry.csv");
+      const data = await response.text();
+      const rows = data.trim().split("\n").slice(1); // skip header
 
-    rows.forEach(row => {
-      const [name, phone, expiryStr] = row.split(',').map(cell => cell.trim());
+      const tbody = document.querySelector("#userTable tbody");
+      tbody.innerHTML = "";
 
-      // Convert DD/MM/YYYY HH:mm:ss → JS Date
-      const [datePart, timePart] = expiryStr.split(' ');
-      const [day, month, year] = datePart.split('/').map(Number);
-      const [hour, minute, second] = timePart.split(':').map(Number);
-      const expiry = new Date(year, month - 1, day, hour, minute, second);
+      const now = new Date();
 
-      let status = '';
-      let rowColor = '';
+      rows.forEach(row => {
+        const [name, phone, expiryStr] = row.split(",");
+        const expiry = new Date(expiryStr);
+        const timeDiff = expiry - now;
+        const hoursLeft = timeDiff / (1000 * 60 * 60);
 
-      const timeLeft = expiry - now;
+        let status = "";
+        let statusClass = "";
 
-      if (isNaN(expiry)) {
-        status = '❌ Invalid date';
-        rowColor = '#f8d7da';
-      } else if (timeLeft <= 0) {
-        status = '❌ Expired';
-        rowColor = '#f8d7da';
-      } else if (timeLeft <= 24 * 60 * 60 * 1000) {
-        status = '⚠️ Almost Expired';
-        rowColor = '#fff3cd';
-      } else {
-        status = '✅ Active';
-        rowColor = '#d4edda';
-      }
+        if (hoursLeft <= 0) {
+          status = "❌ Expired";
+          statusClass = "expired";
+        } else if (hoursLeft <= 24) {
+          status = "⚠️ Almost expired";
+          statusClass = "almost-expired";
+        } else {
+          status = "✅ Active";
+          statusClass = "active";
+        }
 
-      const tr = document.createElement('tr');
-      tr.style.backgroundColor = rowColor;
-      tr.innerHTML = `
-        <td>${name}</td>
-        <td>${phone}</td>
-        <td>${expiryStr}</td>
-        <td>${status}</td>
-      `;
-      tableBody.appendChild(tr);
+        const tr = document.createElement("tr");
+        tr.className = statusClass;
+        tr.innerHTML = `
+          <td>${name}</td>
+          <td>${phone}</td>
+          <td>${expiryStr}</td>
+          <td class="status">${status}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    document.getElementById("search").addEventListener("input", function () {
+      const value = this.value.toLowerCase();
+      document.querySelectorAll("#userTable tbody tr").forEach(row => {
+        row.style.display = row.innerText.toLowerCase().includes(value) ? "" : "none";
+      });
     });
-  });
-</script>
+
+    loadCSV();
+  </script>
 </body>
 </html>
