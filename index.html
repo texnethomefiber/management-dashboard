@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TEXNET User Expiry Dashboard</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 1rem;
+      background-color: #f4f4f4;
+    }
+    h2 {
+      color: #333;
+    }
+    input[type="text"] {
+      padding: 10px;
+      width: 100%;
+      max-width: 400px;
+      margin-bottom: 1rem;
+      font-size: 1rem;
+    }
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      background-color: white;
+    }
+    th, td {
+      padding: 10px;
+      border: 1px solid #ccc;
+      text-align: left;
+    }
+    tr.green {
+      background-color: #d4edda;
+    }
+    tr.yellow {
+      background-color: #fff3cd;
+    }
+    tr.red {
+      background-color: #f8d7da;
+    }
+    @media (max-width: 600px) {
+      table, thead, tbody, th, td, tr {
+        display: block;
+      }
+      tr { margin-bottom: 1rem; }
+    }
+  </style>
+</head>
+<body>
+  <h2>TEXNET User Expiry Dashboard</h2>
+  <input type="text" id="search" placeholder="Search by name or phone...">
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Phone</th>
+        <th>Expiry</th>
+        <th>Status</th>
+      </tr>
+    </thead>
+    <tbody id="userTable"></tbody>
+  </table>
+
+  <script>
+    const apiKey = "AIzaSyDHTlwYPA0bUGCevcWcECvD1HUV52p7BCg";
+    const sheetId = "1_yqWBrupo_R7wf_nD6kSCqVQEKR2nlpquYlMIrS_lGw";
+    const range = "Sheet1!A2:D";
+    const endpoint = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${range}?key=${apiKey}`;
+
+    async function fetchUsers() {
+      const res = await fetch(endpoint);
+      const data = await res.json();
+      const table = document.getElementById("userTable");
+      table.innerHTML = "";
+      const now = new Date();
+
+      data.values.forEach(row => {
+        const [name, phone, expiryRaw] = row;
+        const expiry = new Date(expiryRaw);
+        const hoursLeft = (expiry - now) / 36e5;
+
+        let status = "";
+        let cssClass = "";
+        if (hoursLeft <= 0) {
+          status = "❌ Expired";
+          cssClass = "red";
+        } else if (hoursLeft < 24) {
+          status = "⚠️ Almost Expired";
+          cssClass = "yellow";
+        } else {
+          status = "✅ Active";
+          cssClass = "green";
+        }
+
+        const rowEl = document.createElement("tr");
+        rowEl.className = cssClass;
+        rowEl.innerHTML = `
+          <td>${name}</td>
+          <td>${phone}</td>
+          <td>${expiryRaw}</td>
+          <td>${status}</td>
+        `;
+        table.appendChild(rowEl);
+      });
+    }
+
+    document.getElementById("search").addEventListener("input", function () {
+      const searchTerm = this.value.toLowerCase();
+      const rows = document.querySelectorAll("#userTable tr");
+      rows.forEach(row => {
+        const text = row.innerText.toLowerCase();
+        row.style.display = text.includes(searchTerm) ? "" : "none";
+      });
+    });
+
+    fetchUsers();
+  </script>
+</body>
+</html>
