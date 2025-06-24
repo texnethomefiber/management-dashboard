@@ -1,5 +1,4 @@
-<!DOCTYPE html>
-<html lang="en">
+<!DOCTYPE html><html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -55,16 +54,14 @@
       </tr>
     </thead>
     <tbody></tbody>
-  </table>
-
-  <script>
+  </table>  <script>
     const CSV_URL = 'https://raw.githubusercontent.com/texnethomefiber/management-dashboard/main/user-expiry.csv';
 
     function parseCSV(text) {
       const lines = text.trim().split('\n');
-      const headers = lines.shift().split(',');
+      const headers = lines.shift().split(',').map(h => h.trim());
       return lines.map(line => {
-        const cols = line.split(',');
+        const cols = line.split(',').map(c => c.trim());
         return headers.reduce((obj, h, i) => {
           obj[h] = cols[i];
           return obj;
@@ -83,7 +80,7 @@
         const tbody = document.querySelector('#userTable tbody');
 
         users.forEach(u => {
-          const expiry = new Date(u.Expiry);
+          const expiry = new Date(u["Expiry"]);
           const diffH = (expiry - now) / (1000 * 60 * 60);
 
           let status = '', cls = '';
@@ -98,9 +95,9 @@
           const tr = document.createElement('tr');
           tr.className = cls;
           tr.innerHTML = `
-            <td>${u.Name}</td>
-            <td>${u.Phone}</td>
-            <td>${u.Expiry}</td>
+            <td>${u["Name"]}</td>
+            <td>${u["Phone"]}</td>
+            <td>${u["Expiry"]}</td>
             <td>${status}</td>
           `;
           tbody.appendChild(tr);
@@ -110,6 +107,5 @@
         console.error(err);
         alert('Failed to load CSV – check the URL or your internet connection.');
       });
-  </script>
-</body>
+  </script></body>
 </html>
