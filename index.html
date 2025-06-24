@@ -14,6 +14,22 @@
       color: #333;
       font-size: 1.8em;
     }
+    #filterBar {
+      text-align: center;
+      margin: 10px 0;
+    }
+    .filter-btn {
+      margin: 0 5px;
+      padding: 6px 12px;
+      background-color: #333;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .filter-btn.active {
+      background-color: #007bff;
+    }
     table {
       width: 100%;
       border-collapse: collapse;
@@ -114,8 +130,12 @@
   </style>
 </head>
 <body>
-  <h1>TEXNET HOME FIBER – User Expiry Status</h1>
-  <table id="userTable">
+  <h1>TEXNET HOME FIBER – User Expiry Status</h1>  <div id="filterBar">
+    <button class="filter-btn active" onclick="filterStatus('all', this)">All</button>
+    <button class="filter-btn" onclick="filterStatus('Active', this)">Active</button>
+    <button class="filter-btn" onclick="filterStatus('Almost Expired', this)">Almost Expired</button>
+    <button class="filter-btn" onclick="filterStatus('Expired', this)">Expired</button>
+  </div>  <table id="userTable">
     <thead>
       <tr>
         <th onclick="sortTable(0, this)">Name</th>
@@ -145,6 +165,8 @@
       navigator.clipboard.writeText(text).then(() => alert("Copied: " + text));
     }
 
+    let allUsers = [];
+
     fetch(CSV_URL)
       .then(r => {
         if (!r.ok) throw new Error('Could not fetch CSV: ' + r.status);
@@ -153,12 +175,10 @@
       .then(text => {
         const users = parseCSV(text);
         const now = new Date();
-        const tbody = document.querySelector('#userTable tbody');
 
-        users.forEach(u => {
+        allUsers = users.map(u => {
           const expiry = new Date(u["Expiry"]);
           const diffH = (expiry - now) / (1000 * 60 * 60);
-
           let status = '', cls = '';
           if (diffH < 0) {
             status = 'Expired'; cls = 'expired';
@@ -167,64 +187,75 @@
           } else {
             status = 'Active'; cls = 'active';
           }
-
-          const tr = document.createElement('tr');
-          tr.className = cls;
-          tr.innerHTML = `
-            <td>${u["Name"]}</td>
-            <td>${u["Phone"]}</td>
-            <td>${u["Expiry"]}</td>
-            <td>${status}</td>
-            <td><button class="copy-btn" onclick="copyToClipboard('${u["Phone"]}')">Copy</button></td>
-          `;
-          tbody.appendChild(tr);
+          return { ...u, status, cls };
         });
+
+        renderTable(allUsers);
       })
       .catch(err => {
         console.error(err);
         alert('Failed to load CSV – check the URL or your internet connection.');
       });
 
+    function renderTable(data) {
+      const tbody = document.querySelector('#userTable tbody');
+      tbody.innerHTML = '';
+      data.forEach(u => {
+        const tr = document.createElement('tr');
+        tr.className = u.cls;
+        tr.innerHTML = `
+          <td>${u["Name"]}</td>
+          <td>${u["Phone"]}</td>
+          <td>${u["Expiry"]}</td>
+          <td>${u.status}</td>
+          <td><button class="copy-btn" onclick="copyToClipboard('${u["Phone"]}')">Copy</button></td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
     function sortTable(colIndex, headerElement) {
       const table = document.getElementById("userTable");
       let switching = true;
       let dir = headerElement.classList.contains("sort-asc") ? "desc" : "asc";
 
-      // Remove sort indicators from all headers
-      Array.from(table.rows[0].cells).forEach(th => {
-        th.classList.remove("sort-asc", "sort-desc");
-      });
-
-      // Apply the current sort indicator
+      Array.from(table.rows[0].cells).forEach(th => th.classList.remove("sort-asc", "sort-desc"));
       headerElement.classList.add(dir === "asc" ? "sort-asc" : "sort-desc");
 
       while (switching) {
         switching = false;
         let rows = table.rows;
-
         for (let i = 1; i < rows.length - 1; i++) {
           let shouldSwitch = false;
           let x = rows[i].getElementsByTagName("TD")[colIndex];
           let y = rows[i + 1].getElementsByTagName("TD")[colIndex];
-
           let valX = x.textContent || x.innerText;
           let valY = y.textContent || y.innerText;
-
           if (colIndex === 2) {
             valX = new Date(valX);
             valY = new Date(valY);
           }
-
           if ((dir === "asc" && valX > valY) || (dir === "desc" && valX < valY)) {
             shouldSwitch = true;
             break;
           }
-        
-          if (shouldSwitch) {
-            rows[i].parentNode.insertBefore(rows[i + 1], rows[i]);
-            switching = true;
-          }
         }
+        if (shouldSwitch) {
+          rows[i].parentNode.insertBefore(rows[i + 1], rows[i]);
+          switching = true;
+        }
+      }
+    }
+
+    function filterStatus(status, btn) {
+      const buttons = document.querySelectorAll('.filter-btn');
+      buttons.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+
+      if (status === 'all') {
+        renderTable(allUsers);
+      } else {
+        renderTable(allUsers.filter(u => u.status === status));
       }
     }
   </script></body>
