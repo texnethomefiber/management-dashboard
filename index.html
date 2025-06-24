@@ -4,37 +4,54 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>TEXNET HOME FIBER – User Expiry Status</title>
   <style>
+    :root {
+      --bg-color: #f4f4f4;
+      --text-color: #333;
+      --table-bg: #fff;
+      --header-bg: #333;
+      --header-text: #fff;
+      --copy-btn-bg: #007bff;
+    }
+    body.dark-mode {
+      --bg-color: #121212;
+      --text-color: #eee;
+      --table-bg: #1e1e1e;
+      --header-bg: #444;
+      --header-text: #fff;
+      --copy-btn-bg: #2196f3;
+    }
     body {
       font-family: Arial, sans-serif;
-      background-color: #f4f4f4;
+      background-color: var(--bg-color);
+      color: var(--text-color);
       padding: 10px;
     }
     h1 {
       text-align: center;
-      color: #333;
+      color: var(--text-color);
       font-size: 1.8em;
     }
-    #filterBar {
+    #filterBar, #darkToggle {
       text-align: center;
       margin: 10px 0;
     }
-    .filter-btn {
+    .filter-btn, .toggle-btn {
       margin: 0 5px;
       padding: 6px 12px;
-      background-color: #333;
-      color: white;
+      background-color: var(--header-bg);
+      color: var(--header-text);
       border: none;
       border-radius: 4px;
       cursor: pointer;
     }
     .filter-btn.active {
-      background-color: #007bff;
+      background-color: var(--copy-btn-bg);
     }
     table {
       width: 100%;
       border-collapse: collapse;
       margin-top: 10px;
-      background-color: #fff;
+      background-color: var(--table-bg);
       font-size: 0.9em;
     }
     th, td {
@@ -43,8 +60,8 @@
       border-bottom: 1px solid #ddd;
     }
     th {
-      background-color: #333;
-      color: #fff;
+      background-color: var(--header-bg);
+      color: var(--header-text);
       cursor: pointer;
       position: relative;
     }
@@ -74,7 +91,7 @@
       padding: 4px 8px;
       font-size: 0.8em;
       cursor: pointer;
-      background: #007bff;
+      background: var(--copy-btn-bg);
       color: white;
       border: none;
       border-radius: 4px;
@@ -105,7 +122,7 @@
         margin-bottom: 10px;
         border: 1px solid #ccc;
         border-radius: 5px;
-        background-color: #fff;
+        background-color: var(--table-bg);
         padding: 8px;
       }
       td {
@@ -130,7 +147,9 @@
   </style>
 </head>
 <body>
-  <h1>TEXNET HOME FIBER – User Expiry Status</h1>  <div id="filterBar">
+  <h1>TEXNET HOME FIBER – User Expiry Status</h1>  <div id="darkToggle">
+    <button class="toggle-btn" onclick="toggleDarkMode()">🌙 Toggle Dark Mode</button>
+  </div>  <div id="filterBar">
     <button class="filter-btn active" onclick="filterStatus('all', this)">All</button>
     <button class="filter-btn" onclick="filterStatus('Active', this)">Active</button>
     <button class="filter-btn" onclick="filterStatus('Almost Expired', this)">Almost Expired</button>
@@ -257,6 +276,10 @@
       } else {
         renderTable(allUsers.filter(u => u.status === status));
       }
+    }
+
+    function toggleDarkMode() {
+      document.body.classList.toggle('dark-mode');
     }
   </script></body>
 </html>
