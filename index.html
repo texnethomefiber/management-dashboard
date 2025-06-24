@@ -27,6 +27,7 @@
     th {
       background-color: #333;
       color: #fff;
+      cursor: pointer;
     }
     .expired {
       background-color: #f8d7da;
@@ -40,6 +41,15 @@
       background-color: #d4edda;
       color: #155724;
     }
+    button.copy-btn {
+      padding: 4px 8px;
+      font-size: 0.9em;
+      cursor: pointer;
+      background: #007bff;
+      color: white;
+      border: none;
+      border-radius: 4px;
+    }
   </style>
 </head>
 <body>
@@ -47,10 +57,11 @@
   <table id="userTable">
     <thead>
       <tr>
-        <th>Name</th>
-        <th>Phone</th>
-        <th>Expiry</th>
+        <th onclick="sortTable(0)">Name</th>
+        <th onclick="sortTable(1)">Phone</th>
+        <th onclick="sortTable(2)">Expiry</th>
         <th>Status</th>
+        <th>Copy</th>
       </tr>
     </thead>
     <tbody></tbody>
@@ -67,6 +78,10 @@
           return obj;
         }, {});
       });
+    }
+
+    function copyToClipboard(text) {
+      navigator.clipboard.writeText(text).then(() => alert("Copied: " + text));
     }
 
     fetch(CSV_URL)
@@ -99,6 +114,7 @@
             <td>${u["Phone"]}</td>
             <td>${u["Expiry"]}</td>
             <td>${status}</td>
+            <td><button class="copy-btn" onclick="copyToClipboard('${u["Phone"]}')">Copy</button></td>
           `;
           tbody.appendChild(tr);
         });
@@ -107,5 +123,47 @@
         console.error(err);
         alert('Failed to load CSV – check the URL or your internet connection.');
       });
+
+    function sortTable(colIndex) {
+      const table = document.getElementById("userTable");
+      let switching = true;
+      let dir = "asc";
+      let switchCount = 0;
+
+      while (switching) {
+        switching = false;
+        let rows = table.rows;
+
+        for (let i = 1; i < rows.length - 1; i++) {
+          let shouldSwitch = false;
+          let x = rows[i].getElementsByTagName("TD")[colIndex];
+          let y = rows[i + 1].getElementsByTagName("TD")[colIndex];
+
+          let valX = x.textContent || x.innerText;
+          let valY = y.textContent || y.innerText;
+
+          if (colIndex === 2) { // Expiry column
+            valX = new Date(valX);
+            valY = new Date(valY);
+          }
+
+          if ((dir === "asc" && valX > valY) || (dir === "desc" && valX < valY)) {
+            shouldSwitch = true;
+            break;
+          }
+        
+          if (shouldSwitch) {
+            rows[i].parentNode.insertBefore(rows[i + 1], rows[i]);
+            switching = true;
+            switchCount++;
+          }
+        }
+
+        if (switchCount === 0 && dir === "asc") {
+          dir = "desc";
+          switching = true;
+        }
+      }
+    }
   </script></body>
 </html>
