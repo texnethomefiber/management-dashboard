@@ -30,6 +30,17 @@
       background-color: #333;
       color: #fff;
       cursor: pointer;
+      position: relative;
+    }
+    th.sort-asc::after {
+      content: " \25B2";
+      position: absolute;
+      right: 10px;
+    }
+    th.sort-desc::after {
+      content: " \25BC";
+      position: absolute;
+      right: 10px;
     }
     .expired {
       background-color: #f8d7da;
@@ -107,9 +118,9 @@
   <table id="userTable">
     <thead>
       <tr>
-        <th onclick="sortTable(0)">Name</th>
-        <th onclick="sortTable(1)">Phone</th>
-        <th onclick="sortTable(2)">Expiry</th>
+        <th onclick="sortTable(0, this)">Name</th>
+        <th onclick="sortTable(1, this)">Phone</th>
+        <th onclick="sortTable(2, this)">Expiry</th>
         <th>Status</th>
         <th>Copy</th>
       </tr>
@@ -174,11 +185,18 @@
         alert('Failed to load CSV – check the URL or your internet connection.');
       });
 
-    function sortTable(colIndex) {
+    function sortTable(colIndex, headerElement) {
       const table = document.getElementById("userTable");
       let switching = true;
-      let dir = "asc";
-      let switchCount = 0;
+      let dir = headerElement.classList.contains("sort-asc") ? "desc" : "asc";
+
+      // Remove sort indicators from all headers
+      Array.from(table.rows[0].cells).forEach(th => {
+        th.classList.remove("sort-asc", "sort-desc");
+      });
+
+      // Apply the current sort indicator
+      headerElement.classList.add(dir === "asc" ? "sort-asc" : "sort-desc");
 
       while (switching) {
         switching = false;
@@ -201,17 +219,11 @@
             shouldSwitch = true;
             break;
           }
-
+        
           if (shouldSwitch) {
             rows[i].parentNode.insertBefore(rows[i + 1], rows[i]);
             switching = true;
-            switchCount++;
           }
-        }
-
-        if (switchCount === 0 && dir === "asc") {
-          dir = "desc";
-          switching = true;
         }
       }
     }
