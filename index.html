@@ -7,20 +7,22 @@
     body {
       font-family: Arial, sans-serif;
       background-color: #f4f4f4;
-      padding: 20px;
+      padding: 10px;
     }
     h1 {
       text-align: center;
       color: #333;
+      font-size: 1.8em;
     }
     table {
       width: 100%;
       border-collapse: collapse;
-      margin-top: 20px;
+      margin-top: 10px;
       background-color: #fff;
+      font-size: 0.9em;
     }
     th, td {
-      padding: 12px;
+      padding: 10px;
       text-align: left;
       border-bottom: 1px solid #ddd;
     }
@@ -43,12 +45,60 @@
     }
     button.copy-btn {
       padding: 4px 8px;
-      font-size: 0.9em;
+      font-size: 0.8em;
       cursor: pointer;
       background: #007bff;
       color: white;
       border: none;
       border-radius: 4px;
+    }
+    @media (max-width: 768px) {
+      h1 {
+        font-size: 1.4em;
+      }
+      table {
+        font-size: 0.8em;
+      }
+      th, td {
+        padding: 6px;
+      }
+      button.copy-btn {
+        padding: 2px 6px;
+        font-size: 0.7em;
+      }
+    }
+    @media (max-width: 480px) {
+      table, thead, tbody, th, td, tr {
+        display: block;
+      }
+      thead tr {
+        display: none;
+      }
+      tr {
+        margin-bottom: 10px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        background-color: #fff;
+        padding: 8px;
+      }
+      td {
+        border: none;
+        position: relative;
+        padding-left: 50%;
+      }
+      td::before {
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        width: 45%;
+        white-space: nowrap;
+        font-weight: bold;
+      }
+      td:nth-of-type(1)::before { content: "Name"; }
+      td:nth-of-type(2)::before { content: "Phone"; }
+      td:nth-of-type(3)::before { content: "Expiry"; }
+      td:nth-of-type(4)::before { content: "Status"; }
+      td:nth-of-type(5)::before { content: "Copy"; }
     }
   </style>
 </head>
@@ -142,7 +192,7 @@
           let valX = x.textContent || x.innerText;
           let valY = y.textContent || y.innerText;
 
-          if (colIndex === 2) { // Expiry column
+          if (colIndex === 2) {
             valX = new Date(valX);
             valY = new Date(valY);
           }
@@ -151,7 +201,7 @@
             shouldSwitch = true;
             break;
           }
-        
+
           if (shouldSwitch) {
             rows[i].parentNode.insertBefore(rows[i + 1], rows[i]);
             switching = true;
