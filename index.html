@@ -2,47 +2,49 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>TEXNET User Expiry Dashboard</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TEXNET HOME FIBER – User Expiry Status</title>
   <style>
     body {
       font-family: Arial, sans-serif;
+      background-color: #f4f4f4;
       padding: 20px;
     }
-    input[type="text"] {
-      width: 100%;
-      padding: 10px;
-      margin-bottom: 15px;
-      font-size: 16px;
+    h1 {
+      text-align: center;
+      color: #333;
     }
     table {
       width: 100%;
       border-collapse: collapse;
-      margin-top: 10px;
+      margin-top: 20px;
+      background-color: #fff;
     }
     th, td {
-      padding: 10px;
+      padding: 12px;
       text-align: left;
-      border-bottom: 1px solid #ccc;
+      border-bottom: 1px solid #ddd;
+    }
+    th {
+      background-color: #333;
+      color: #fff;
     }
     .expired {
-      background-color: #fdd;
+      background-color: #f8d7da;
+      color: #721c24;
     }
     .almost-expired {
-      background-color: #fff5cc;
+      background-color: #fff3cd;
+      color: #856404;
     }
     .active {
-      background-color: #e0f9e0;
-    }
-    .status {
-      font-weight: bold;
+      background-color: #d4edda;
+      color: #155724;
     }
   </style>
 </head>
 <body>
-  <h1>TEXNET User Expiry Dashboard</h1>
-  <input type="text" id="search" placeholder="Search by name or phone..."/>
-
+  <h1>TEXNET HOME FIBER – User Expiry Status</h1>
   <table id="userTable">
     <thead>
       <tr>
@@ -52,70 +54,62 @@
         <th>Status</th>
       </tr>
     </thead>
-    <tbody>
-      <!-- User rows go here -->
-    </tbody>
+    <tbody></tbody>
   </table>
 
   <script>
-  async function loadCSV() {
-    const response = await fetch("user-expiry.csv");
-    const data = await response.text();
-    const rows = data.trim().split("\n").slice(1); // skip header
+    const CSV_URL = 'https://raw.githubusercontent.com/texnethomefiber/management-dashboard/main/user-expiry.csv';
 
-    const tbody = document.querySelector("#userTable tbody");
-    tbody.innerHTML = "";
+    function parseCSV(text) {
+      const lines = text.trim().split('\n');
+      const headers = lines.shift().split(',');
+      return lines.map(line => {
+        const cols = line.split(',');
+        return headers.reduce((obj, h, i) => {
+          obj[h] = cols[i];
+          return obj;
+        }, {});
+      });
+    }
 
-    const now = new Date();
+    fetch(CSV_URL)
+      .then(r => {
+        if (!r.ok) throw new Error('Could not fetch CSV: ' + r.status);
+        return r.text();
+      })
+      .then(text => {
+        const users = parseCSV(text);
+        const now = new Date();
+        const tbody = document.querySelector('#userTable tbody');
 
-    rows.forEach(row => {
-      const [name, phone, expiryStr] = row.split(",");
-      const [datePart, timePart] = expiryStr.trim().split(" ");
-      const [day, month, year] = datePart.split("/").map(Number);
-      const [hour, minute, second] = timePart.split(":").map(Number);
+        users.forEach(u => {
+          const expiry = new Date(u.Expiry);
+          const diffH = (expiry - now) / (1000 * 60 * 60);
 
-      // Manually construct date in correct format
-      const expiry = new Date(year, month - 1, day, hour, minute, second);
-      const timeDiff = expiry - now;
-      const hoursLeft = timeDiff / (1000 * 60 * 60);
+          let status = '', cls = '';
+          if (diffH < 0) {
+            status = 'Expired'; cls = 'expired';
+          } else if (diffH <= 24) {
+            status = 'Almost Expired'; cls = 'almost-expired';
+          } else {
+            status = 'Active'; cls = 'active';
+          }
 
-      let status = "";
-      let statusClass = "";
-
-      if (isNaN(expiry.getTime())) {
-        status = "Invalid Date";
-        statusClass = "";
-      } else if (hoursLeft <= 0) {
-        status = "❌ Expired";
-        statusClass = "expired";
-      } else if (hoursLeft <= 24) {
-        status = "⚠️ Almost expired";
-        statusClass = "almost-expired";
-      } else {
-        status = "✅ Active";
-        statusClass = "active";
-      }
-
-      const tr = document.createElement("tr");
-      tr.className = statusClass;
-      tr.innerHTML = `
-        <td>${name}</td>
-        <td>${phone}</td>
-        <td>${expiryStr}</td>
-        <td class="status">${status}</td>
-      `;
-      tbody.appendChild(tr);
-    });
-  }
-
-  document.getElementById("search").addEventListener("input", function () {
-    const value = this.value.toLowerCase();
-    document.querySelectorAll("#userTable tbody tr").forEach(row => {
-      row.style.display = row.innerText.toLowerCase().includes(value) ? "" : "none";
-    });
-  });
-
-  loadCSV();
-</script>
+          const tr = document.createElement('tr');
+          tr.className = cls;
+          tr.innerHTML = `
+            <td>${u.Name}</td>
+            <td>${u.Phone}</td>
+            <td>${u.Expiry}</td>
+            <td>${status}</td>
+          `;
+          tbody.appendChild(tr);
+        });
+      })
+      .catch(err => {
+        console.error(err);
+        alert('Failed to load CSV – check the URL or your internet connection.');
+      });
+  </script>
 </body>
 </html>
